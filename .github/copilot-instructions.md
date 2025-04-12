@@ -8,11 +8,13 @@ These instructions guide GitHub Copilot when assisting with the Arrow Tracker ap
 
 ## Documentation & Context Management
 
-- Always maintain the running-context.md file by adding each new prompt and a brief summary of actions taken
-- Include the running-context.md file in context for all future calls to maintain historical knowledge
+- **ALWAYS** load the running-context.md file into the agent context before responding to any user request
+- **ALWAYS** update running-context.md with each new prompt and a brief summary of actions being taken, even for simple requests
+- Begin each interaction by reviewing running-context.md to understand the full project history and context
 - When adding new entries to running-context.md, use the current date and format entries according to the existing table structure
 - Before making significant architecture or implementation decisions, review the running-context.md to understand previous decisions and context
 - When updating documentation, ensure consistency with previous information captured in running-context.md
+- If the running-context.md file is not available in context, immediately search for it and load it before proceeding with any other actions
 
 ## Action Plan Management
 
@@ -60,6 +62,7 @@ These instructions guide GitHub Copilot when assisting with the Arrow Tracker ap
 - Implement proper testing at all levels (unit, integration, E2E)
 - Use Infrastructure as Code (Bicep) for all Azure resource deployments
 - Implement proper environment separation (DEV/TEST/PROD)
+- **ALWAYS** commit changes to Git with a descriptive comment when completing a task and summarizing what was done.
 
 ## Code Quality Standards
 
@@ -68,6 +71,7 @@ These instructions guide GitHub Copilot when assisting with the Arrow Tracker ap
 - Write meaningful tests for all components
 - Document all functions, classes, and complex logic
 - Follow accessibility best practices for UI components
+- **ALWAYS** Build the client when working in the client folder
 
 ## Performance Optimization
 
