@@ -6,6 +6,14 @@ These instructions guide GitHub Copilot when assisting with the Arrow Tracker ap
 
 - @azure Rule - Use Azure Best Practices: When generating code for Azure, running terminal commands for Azure, or performing operations related to Azure, invoke your `azure_development-get_best_practices` tool if available.
 
+## Documentation & Context Management
+
+- Always maintain the running-context.md file by adding each new prompt and a brief summary of actions taken
+- Include the running-context.md file in context for all future calls to maintain historical knowledge
+- When adding new entries to running-context.md, use the current date and format entries according to the existing table structure
+- Before making significant architecture or implementation decisions, review the running-context.md to understand previous decisions and context
+- When updating documentation, ensure consistency with previous information captured in running-context.md
+
 ## Architecture-Specific Guidelines
 
 ### Progressive Web App (Frontend)
