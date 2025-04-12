@@ -14,6 +14,17 @@ These instructions guide GitHub Copilot when assisting with the Arrow Tracker ap
 - Before making significant architecture or implementation decisions, review the running-context.md to understand previous decisions and context
 - When updating documentation, ensure consistency with previous information captured in running-context.md
 
+## Action Plan Management
+
+- For complex requests, first create and present an action plan as a checklist of steps before executing
+- Save action plans in the docs/action_plan directory with a descriptive filename and markdown format
+- When executing the plan, update the checklist to mark completed items (e.g., "- [x] Completed task")
+- Reference the action plan throughout the implementation process to keep the user informed of progress
+- If the plan needs to be modified during execution, explain why and update the action plan document
+- After completion, update the action plan with a "Completed" status and summary of outcomes
+- Always update the action_plans_index.md file when creating a new action plan or completing an existing one
+- Move completed action plans from the "Available Action Plans" section to the "Completed Action Plans" section in the index
+
 ## Architecture-Specific Guidelines
 
 ### Progressive Web App (Frontend)
