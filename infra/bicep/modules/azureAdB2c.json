@@ -1,0 +1,107 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.34.44.8038",
+      "templateHash": "9343014627371118101"
+    }
+  },
+  "parameters": {
+    "tenantName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the B2C tenant (without .onmicrosoft.com)"
+      }
+    },
+    "applicationDisplayName": {
+      "type": "string",
+      "defaultValue": "Arrow Tracker",
+      "metadata": {
+        "description": "The display name for the B2C application"
+      }
+    },
+    "replyUrls": {
+      "type": "array",
+      "defaultValue": [
+        "http://localhost:3000",
+        "https://localhost:3000"
+      ],
+      "metadata": {
+        "description": "The reply URLs for the B2C application (where users will be redirected after authentication)"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags to apply to B2C resources"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.AzureActiveDirectory/b2cDirectories/applications",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName'))]",
+      "properties": {
+        "displayName": "[parameters('applicationDisplayName')]",
+        "identifierUris": [
+          "[format('https://{0}.onmicrosoft.com/{1}', parameters('tenantName'), parameters('applicationDisplayName'))]"
+        ],
+        "replyUrls": "[parameters('replyUrls')]",
+        "requiredResourceAccess": [
+          {
+            "resourceAppId": "00000003-0000-0000-c000-000000000000",
+            "resourceAccess": [
+              {
+                "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+                "type": "Scope"
+              }
+            ]
+          }
+        ],
+        "webApp": {
+          "implicitGrantSettings": {
+            "enableAccessTokenIssuance": true,
+            "enableIdTokenIssuance": true
+          }
+        },
+        "tags": "[coalesce(tryGet(parameters('tags'), 'applicationTags'), createArray())]"
+      }
+    },
+    {
+      "type": "Microsoft.AzureActiveDirectory/b2cDirectories/applications/servicePrincipals",
+      "apiVersion": "2023-01-01-preview",
+      "name": "[format('{0}/{1}/{2}', split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[0], split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[1], format('sp-{0}', parameters('applicationDisplayName')))]",
+      "properties": {
+        "accountEnabled": true,
+        "appId": "[reference(resourceId('Microsoft.AzureActiveDirectory/b2cDirectories/applications', split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[0], split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[1]), '2023-01-01-preview').appId]",
+        "displayName": "[parameters('applicationDisplayName')]",
+        "tags": "[coalesce(tryGet(parameters('tags'), 'servicePrincipalTags'), createArray())]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.AzureActiveDirectory/b2cDirectories/applications', split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[0], split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[1])]"
+      ]
+    }
+  ],
+  "outputs": {
+    "appId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.AzureActiveDirectory/b2cDirectories/applications', split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[0], split(format('{0}/{1}', parameters('tenantName'), parameters('applicationDisplayName')), '/')[1]), '2023-01-01-preview').appId]"
+    },
+    "applicationName": {
+      "type": "string",
+      "value": "[parameters('applicationDisplayName')]"
+    },
+    "tenantName": {
+      "type": "string",
+      "value": "[parameters('tenantName')]"
+    },
+    "b2cTenantUrl": {
+      "type": "string",
+      "value": "[format('https://{0}.b2clogin.com/{1}.onmicrosoft.com', parameters('tenantName'), parameters('tenantName'))]"
+    }
+  }
+}

@@ -1,0 +1,113 @@
+name: Azure Infrastructure Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to (test)"
+        default: "test"
+        required: true
+      deploy:
+        description: "Whether to actually deploy resources (true/false)"
+        default: "false"
+        required: true
+      tenant_name:
+        description: "B2C tenant name (required for deployment)"
+        required: false
+
+jobs:
+  validate-bicep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Azure CLI Bicep extension
+        run: az bicep install
+
+      - name: Create Resource Group for testing
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true' && github.event.inputs.tenant_name != ''
+        run: |
+          az group create --name arrowtrack-${{ github.event.inputs.environment }}-rg --location westus2 --tags purpose=testing environment=${{ github.event.inputs.environment }}
+
+      - name: Validate Bicep templates
+        run: |
+          cd infra/tests
+          chmod +x ./validate-bicep.sh
+          ./validate-bicep.sh --tenant-name "arrowtrackerb2ctest" --resource-group "arrowtrack-test-rg"
+
+  deploy-test:
+    runs-on: ubuntu-latest
+    needs: validate-bicep
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true' && github.event.inputs.tenant_name != ''
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy test environment
+        run: |
+          cd infra/tests
+          chmod +x ./test-deployment.sh
+          ./test-deployment.sh --environment ${{ github.event.inputs.environment }} --tenant-name ${{ github.event.inputs.tenant_name }}
+
+      - name: Setup B2C configuration
+        run: |
+          cd infra/bicep
+          chmod +x ./setup-b2c-policies.sh
+          ./setup-b2c-policies.sh --tenant-name ${{ github.event.inputs.tenant_name }} --output "../tests/b2c-test-config.json"
+
+      - name: Save B2C configuration as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: b2c-configuration
+          path: infra/tests/b2c-test-config.json
+          retention-days: 7
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: deploy-test
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true' && github.event.inputs.tenant_name != ''
+    environment:
+      name: test-cleanup
+      url: https://portal.azure.com/#blade/HubsExtension/ResourceGroupBlade/resourceGroupName/arrowtrack-${{ github.event.inputs.environment }}-rg
+    steps:
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Show resources to be deleted
+        run: |
+          echo "Resources in resource group arrowtrack-${{ github.event.inputs.environment }}-rg:"
+          az resource list --resource-group arrowtrack-${{ github.event.inputs.environment }}-rg --output table
+
+      - name: Manual approval step
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          issue-title: "Cleanup test resources"
+          issue-body: "Please approve to delete the resource group arrowtrack-${{ github.event.inputs.environment }}-rg"
+          timeout-minutes: 60
+
+      - name: Delete resource group
+        run: |
+          echo "Deleting resource group arrowtrack-${{ github.event.inputs.environment }}-rg..."
+          az group delete --name arrowtrack-${{ github.event.inputs.environment }}-rg --yes --no-wait
+          echo "Resource group deletion initiated. It may take several minutes to complete."

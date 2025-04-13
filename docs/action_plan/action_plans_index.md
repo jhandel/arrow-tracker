@@ -14,3 +14,4 @@ This document indexes all action plans for the Arrow Tracker project.
 ## Completed Action Plans
 
 - [Initial Client Application Setup](action_plan_client_setup.md) - Initial setup of the Progressive Web App client
+- [Azure Development Environment Setup](action_plan_azure_setup.md) - Setup of Azure environment with B2C authentication
